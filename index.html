@@ -124,7 +124,11 @@
     <h2 class="font-serif font-black text-3xl sm:text-5xl">三十年來，這條街上人來人往。</h2>
     <p class="mt-4 text-cream/60 text-sm sm:text-base">從清晨第一鍋，到深夜最後一位客人 — 煎台的滋滋聲沒停過，門口的腳步聲也是。</p>
   </div>
-  <div id="street3d" class="relative -mt-10 h-[380px] sm:h-[560px]" aria-hidden="true"><canvas></canvas>
+  <div id="street3d" class="relative -mt-10 h-[380px] sm:h-[560px]"><canvas aria-hidden="true"></canvas>
+    <button id="street-toggle" type="button" aria-label="暫停動畫" class="absolute z-10 bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 border border-white/15 text-cream grid place-items-center backdrop-blur transition">
+      <svg data-icon="pause" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      <svg data-icon="play" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
     <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#1a110b] to-transparent"></div>
   </div>
 </section>
@@ -874,11 +878,12 @@ function resize() {
   camera.updateProjectionMatrix();
   if (!running) renderFrame(0);
 }
-const clock = new THREE.Clock(); let t = 0, running = false, visible = false;
+const clock = new THREE.Clock(); let t = 0, running = false, visible = false, paused = false;
 function renderFrame(dt) {
   t += dt;
   mouse.x += (mouse.tx - mouse.x) * Math.min(1, dt * 2); mouse.y += (mouse.ty - mouse.y) * Math.min(1, dt * 2);
-  camera.position.set(camBase.x + Math.sin(t * 0.12) * 0.9 + mouse.x * 1.4, camBase.y + mouse.y * -0.4, camBase.z + Math.cos(t * 0.09) * 0.4);
+  const drift = reduceMotion ? 0.25 : 1; // 減少動態效果：行人照走，鏡頭幾乎不晃
+  camera.position.set(camBase.x + (Math.sin(t * 0.12) * 0.9 + mouse.x * 1.4) * drift, camBase.y + mouse.y * -0.4 * drift, camBase.z + Math.cos(t * 0.09) * 0.4 * drift);
   camera.lookAt(lookAt);
   people.forEach(p => updatePerson(p, dt));
   for (let i = 0; i < DUST; i++) {
@@ -902,7 +907,7 @@ function loop() {
   requestAnimationFrame(loop);
 }
 function setRunning(on) {
-  on = on && visible && !document.hidden && !reduceMotion;
+  on = on && visible && !document.hidden && !paused;
   if (on === running) return;
   running = on; if (on) { clock.getDelta(); loop(); }
 }
@@ -910,8 +915,15 @@ new ResizeObserver(resize).observe(wrap);
 new IntersectionObserver(([e]) => { visible = e.isIntersecting; setRunning(true); }, { rootMargin: "100px" }).observe(wrap);
 document.addEventListener("visibilitychange", () => setRunning(true));
 resize();
-if (reduceMotion) { for (let i = 0; i < 40; i++) people.forEach(p => updatePerson(p, 0.05)); renderFrame(0); }
-else renderFrame(0.016);
+renderFrame(0.016);
+const toggle = document.getElementById("street-toggle");
+toggle.addEventListener("click", () => {
+  paused = !paused;
+  toggle.setAttribute("aria-label", paused ? "播放動畫" : "暫停動畫");
+  toggle.querySelector('[data-icon="pause"]').classList.toggle("hidden", paused);
+  toggle.querySelector('[data-icon="play"]').classList.toggle("hidden", !paused);
+  setRunning(true);
+});
 wrap.classList.add("ready");
 </script>
 
