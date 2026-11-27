@@ -1,5 +1,5 @@
 /* 鍋事 PWA Service Worker */
-const VERSION = "guoshih-v1";
+const VERSION = "guoshih-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 const OPTIONAL = ["./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png"];
 // 第三方資源（Tailwind、字型、Three.js、圖示、圖片）：先用快取、背景更新
